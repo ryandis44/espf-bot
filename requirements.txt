@@ -1,0 +1,9 @@
+# windows-curses for windows development
+
+python-dotenv==1.0.1 # for .env file
+discord.py==2.4.0
+discord.py-Console==0.1.2
+mysql-connector-python==8.3.0 # for inital MySQL initialization
+dnspython==2.6.1 # DNS hostname lookup
+aiomysql==0.2.0 # for async mysql
+aiohttp==3.9.3 # for async http requests

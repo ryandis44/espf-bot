@@ -12,8 +12,7 @@ The tunables are stored in a dictionary, with the variable name as the key, and 
 import logging
 
 from Database.MySQL import Database, AsyncDatabase
-from discord import ButtonStyle, ChannelType, Color, SelectOption
-from json import loads
+from discord import ChannelType
 db = AsyncDatabase(__file__)
 LOGGER = logging.getLogger()
 
@@ -64,43 +63,8 @@ def configure_tunables() -> None:
         try:
             if 'PERMS_PROFILE_' in key:
                 TUNABLES[key] = PermissionProfile(profile=str(key)[14:])
-            
-            if 'GENERATIVE_AI_MODE_' in key:
-                d = loads(val)
-                temp.append(d)
+                
         except Exception as e: LOGGER.error(f"TUNABLES ERROR: (({e})) Could not CONFIGURE PROFILE {key} {val}")
-    
-    def srt(d) -> int:
-        return d['position']
-    try: temp.sort(key=srt)
-    except Exception as e: LOGGER.error(f"TUNABLES ERROR: Could not SORT AI PERSONALITIES: {e}")
-    for d in temp:
-        try:
-            TUNABLES['GENERATIVE_AI_MODES'].append(
-                [
-                    int(d['permission_level']),
-                    SelectOption(
-                        label=d['label'],
-                        description=d['description'],
-                        value=d['value'],
-                        emoji=d['emoji']
-                    )
-                ]
-            )
-            TUNABLES[f"GENERATIVE_AI_MODE_{d['value']}"] = {
-                'prompt': d['prompt'],
-                'model': d['model'],
-                'api': d['api'],
-                'value': d['value'],
-                'input_tokens': d['input_tokens'],
-                'response_tokens': d['response_tokens']
-            }
-        except Exception as e:
-            try:
-                TUNABLES['GENERATIVE_AI_MODES'].pop()
-                del TUNABLES[f"GENERATIVE_AI_MODE_{d['value']}"]
-            except: pass
-            LOGGER.error(f"TUNABLES ERROR: (({e})) Could not CONFIGURE PERSONALITY: {d}")
 
 
 

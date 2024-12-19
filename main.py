@@ -16,6 +16,7 @@ from dpyConsole import Console # console used for debugging, logging, and shutdo
 from Database.MySQL import connect_pool # connect to the database
 # from Database.Redis import connect_redis # connect to the redis cache
 from Database.tunables import tunables_init, tunables # tunables used by the bot
+from functions.update_pfp_on_boot import update_pfp_on_boot # update bot pfp on boot
 
 
 
@@ -30,7 +31,7 @@ Set up logger and load variables
 log_level = os.getenv('LOG_LEVEL')
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.WARNING if log_level is None else int(log_level)) # default log level is WARNING
-handler = logging.FileHandler(filename='miko.log', encoding='utf-8', mode='w')
+handler = logging.FileHandler(filename='espf.log', encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s:%(filename)s:%(lineno)s: %(message)s'))
 LOGGER.addHandler(handler)
 
@@ -53,23 +54,15 @@ class Bot(commands.Bot):
         intents: discord.Intents = discord.Intents.all()
         super().__init__(command_prefix=tunables("COMMAND_PREFIX"), intents=intents, case_insensitive=True, help_command=None)
         self.first_run = True
-        self.pool = mafic.NodePool(self)
     
     
     
     async def on_ready(self) -> None:
-        if self.first_run:
-            await self.pool.create_node(
-                host=LAN_IP,
-                port=2333,
-                label="MAIN",
-                password=tunables('LAVALINK_PASSWORD'),
-            )
-        
         LOGGER.log(level=logging.INFO, msg=f'Logged in as {client.user} {client.user.id}')
         print('bot online') # for pterodactyl console for online status
         await client.change_presence(activity=discord.Game(name=tunables("ACTIVITY_STATUS")))
-        await load_cogs_cmd_on_ready()
+        await update_pfp_on_boot(client)
+        # await load_cogs_cmd_on_ready()
         self.first_run = False
 
 client = Bot()
@@ -108,59 +101,45 @@ functions for processing
 Events are located in the Events directory
 '''
 
-@client.event
-async def on_message(message):
-    try: await on_message_caller(message, client)
-    except Exception as e: LOGGER.error(f"Error in on_message: {e}")
+# @client.event
+# async def on_message(message):
+#     try: await on_message_caller(message, client)
+#     except Exception as e: LOGGER.error(f"Error in on_message: {e}")
 
 
 
-@client.event
-async def on_presence_update(previous, current):
-    try: await on_presence_update_caller(previous, current, client)
-    except Exception as e: LOGGER.error(f"Error in on_presence_update: {e}")
+# @client.event
+# async def on_presence_update(previous, current):
+#     try: await on_presence_update_caller(previous, current, client)
+#     except Exception as e: LOGGER.error(f"Error in on_presence_update: {e}")
 
 
 
-@client.event
-async def on_member_join(member):
-    try: await on_member_join_caller(member, client)
-    except Exception as e: LOGGER.error(f"Error in on_member_join: {e}")
+# @client.event
+# async def on_member_join(member):
+#     try: await on_member_join_caller(member, client)
+#     except Exception as e: LOGGER.error(f"Error in on_member_join: {e}")
 
 
 
-@client.event
-async def on_raw_member_remove(payload):
-    try: await on_raw_member_remove_caller(payload, client)
-    except Exception as e: LOGGER.error(f"Error in on_raw_member_remove: {e}")
+# @client.event
+# async def on_raw_member_remove(payload):
+#     try: await on_raw_member_remove_caller(payload, client)
+#     except Exception as e: LOGGER.error(f"Error in on_raw_member_remove: {e}")
 
 
 
-@client.event
-async def on_voice_state_update(member, before, after):
-    try: await on_voice_state_update_caller(member, before, after, client)
-    except Exception as e: LOGGER.error(f"Error in on_voice_state_update: {e}")
+# @client.event
+# async def on_raw_message_edit(payload):
+#     try: await on_raw_message_edit_caller(payload, client)
+#     except Exception as e: LOGGER.error(f"Error in on_raw_message_edit: {e}")
 
 
 
-@client.event
-async def on_raw_message_edit(payload):
-    try: await on_raw_message_edit_caller(payload, client)
-    except Exception as e: LOGGER.error(f"Error in on_raw_message_edit: {e}")
-
-
-
-@client.event
-async def on_raw_message_delete(payload):
-    try: await on_raw_message_delete_caller(payload, client)
-    except Exception as e: LOGGER.error(f"Error in on_raw_message_delete: {e}")
-
-
-
-@client.listen()
-async def on_track_end(event):
-    try: await track_end(event)
-    except Exception as e: LOGGER.error(f"Error in on_track_end: {e}")
+# @client.event
+# async def on_raw_message_delete(payload):
+#     try: await on_raw_message_delete_caller(payload, client)
+#     except Exception as e: LOGGER.error(f"Error in on_raw_message_delete: {e}")
 
 
 
@@ -196,16 +175,16 @@ async def load_cogs_cmd():
                 LOGGER.error(f'Failed to load cmd cog: {filename[:-3]} | {e}')   
     LOGGER.log(level=logging.DEBUG, msg='All cmd cogs loaded.')
     
-async def load_cogs_cmd_on_ready():
-    for dir in os.listdir('./cogs_cmd_on_ready'):
-        for filename in os.listdir(f'./cogs_cmd_on_ready/{dir}'):
-            try:
-                if filename != 'cog.py': continue
-                await client.load_extension(f'cogs_cmd_on_ready.{dir}.{filename[:-3]}')
-                LOGGER.log(level=logging.DEBUG, msg=f'Loaded cmd cog on ready: {dir}/{filename[:-3]}')
-            except Exception as e:
-                LOGGER.error(f'Failed to load cmd cog on ready: {filename[:-3]} | {e}')   
-    LOGGER.log(level=logging.DEBUG, msg='All cmd cogs on ready loaded.')
+# async def load_cogs_cmd_on_ready():
+#     for dir in os.listdir('./cogs_cmd_on_ready'):
+#         for filename in os.listdir(f'./cogs_cmd_on_ready/{dir}'):
+#             try:
+#                 if filename != 'cog.py': continue
+#                 await client.load_extension(f'cogs_cmd_on_ready.{dir}.{filename[:-3]}')
+#                 LOGGER.log(level=logging.DEBUG, msg=f'Loaded cmd cog on ready: {dir}/{filename[:-3]}')
+#             except Exception as e:
+#                 LOGGER.error(f'Failed to load cmd cog on ready: {filename[:-3]} | {e}')   
+#     LOGGER.log(level=logging.DEBUG, msg='All cmd cogs on ready loaded.')
 
 async def load_cogs_console():
     for filename in os.listdir('./cogs_console'):
@@ -233,7 +212,7 @@ async def main() -> None:
         await load_cogs_cmd()
         console.start()
         await connect_pool()
-        await connect_redis()
+        # await connect_redis()
         # await load_cogs_console()
         await client.start(os.getenv('DISCORD_TOKEN'))
 
