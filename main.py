@@ -6,7 +6,6 @@ Any extra features are referenced by main.py, and are imported as needed. No cor
 import asyncio
 import discord
 import logging # used for logging messages to the console and log file
-import mafic # music player
 import os # used for exiting the program without error messages
 import signal # used for handling shutdown signals (ctrl+c)
 
